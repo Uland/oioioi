@@ -117,6 +117,13 @@ def generate_all(dir, verbose):
     execute(cmd,
             capture_output=False)
 
+def remove_dir_contents(dir_path):
+    for file_object in os.listdir(dir_path):
+        file_object_path = os.path.join(dir_path, file_object)
+        if os.path.isfile(file_object_path):
+            os.unlink(file_object_path)
+        else:
+            shutil.rmtree(file_object_path)
 
 def main():
     usage = "usage: %prog [options] dir"
@@ -127,15 +134,20 @@ def main():
         parser.error("expected a single argument: deployment folder to create")
     dir = os.path.abspath(args[0])
 
-    if os.path.exists(dir):
-        error("%s already exists; please specify another location" % (dir,))
+    existsBefore = os.path.exists(dir)
 
-    os.makedirs(dir)
+    if existsBefore and os.listdir(dir) != []:
+        error("%s already exists and is nit empty; please specify another location" % (dir,))
+
+    if not existsBefore:
+        os.makedirs(dir)
 
     try:
         generate_all(dir, _options.verbose)
     except BaseException:
-        shutil.rmtree(dir)
+        remove_dir_contents(dir)
+        if not existsBefore:
+            os.rmdir(dir)
         raise
 
     print >> sys.stderr
