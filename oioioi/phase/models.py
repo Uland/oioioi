@@ -10,3 +10,4 @@ class Phase(models.Model):
     class Meta(object):
         verbose_name = _("Phase")
         verbose_name_plural = _("Phases")
+        ordering = ['start_date']

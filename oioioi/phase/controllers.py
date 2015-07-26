@@ -4,7 +4,9 @@ from django.utils.translation import ugettext_lazy as _
 from oioioi.contests.scores import IntegerScore
 from oioioi.phase.models import Phase
 
-class _FakePhase:
+from itertools import izip
+
+class _FirstPhase:
     multiplier = 100
 
 class PhaseContestController(ProgrammingContestController):
@@ -30,23 +32,29 @@ class PhaseContestController(ProgrammingContestController):
 
             round = result.problem_instance.round
 
-            phases = Phase.objects \
-                .filter(round=round) \
-                .order_by('start_date')
+            phases = list(Phase.objects
+                .filter(round=round)
+                .order_by('start_date'))
+            phases.insert(0, _FirstPhase())
 
-            cur_phase = _FakePhase()
-            next_phase_index = 0;
+            next_phase_index = 1;
+            subs_by_phase = [[]]
+            for s in submissions:
+                while (next_phase_index < len(phases) and
+                        phases[next_phase_index].start_date <= s.date):
+                    cur_phase = phases[next_phase_index]
+                    subs_by_phase.append([])
+                    next_phase_index = next_phase_index + 1
+                subs_by_phase[-1].append(s)
 
             lastHighest = 0
             total = 0
-            for s in submissions:
-                if (next_phase_index < len(phases) and
-                        phases[next_phase_index].start_date < s.date):
-                    cur_phase = phases[next_phase_index]
-                score = s.score.to_int()
-                if score > lastHighest:
-                    total += (score - lastHighest) * cur_phase.multiplier
-                    lastHighest = score
+            for subs, phase in izip(subs_by_phase, phases):
+                if subs:
+                    phase_score = subs[-1].score.to_int()
+                    if phase_score > lastHighest:
+                        total += (phase_score - lastHighest) * phase.multiplier
+                        lastHighest = phase_score
 
             chosen_submission = submissions.latest() # mostly to link it later
 
