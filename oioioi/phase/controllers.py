@@ -3,6 +3,7 @@ from oioioi.contests.models import Submission, SubmissionReport
 from django.utils.translation import ugettext_lazy as _
 from oioioi.contests.scores import IntegerScore
 from oioioi.phase.models import Phase
+from oioioi.participants.controllers import ParticipantsController
 
 from itertools import izip
 
@@ -19,6 +20,10 @@ class PhaseContestController(ProgrammingContestController):
         environ['group_scorer'] = 'oioioi.programs.utils.min_group_scorer'
         environ['test_scorer'] = \
                 'oioioi.programs.utils.threshold_linear_test_scorer'
+
+
+    def registration_controller(self):
+        return ParticipantsController(self.contest)
 
     def update_user_result_for_problem(self, result):
         try:
